@@ -63,7 +63,7 @@ exp:        INT
         |   comparison
         |   boolean_exp
         |   MINUS exp %prec UMINUS
-        |   ID LBRACE field_assignments RBRACE
+        |   ID LBRACE records RBRACE
         |   ID LBRACK exp RBRACK OF exp
         |   LPAREN RPAREN
         |   LPAREN exp_sequence RPAREN
@@ -90,13 +90,13 @@ arith:          exp PLUS exp
 boolean_exp:    exp AND exp
         |       exp OR exp
 
-field_assignments:      /* empty */
-        |               field_assignment_list
+records:      /* empty */
+        |               record_list
 
-field_assignment_list:  field_assignment
-        |               field_assignment_list COMMA field_assignment
+record_list:        record
+        |           record_list COMMA record
 
-field_assignment:       ID EQ exp
+record:             ID EQ exp
 
 select:         IF exp THEN exp ELSE exp
         |       IF exp THEN exp
