@@ -52,7 +52,9 @@ program:    exp
 exp:        INT
         |   STRING
         |   NIL
+        |   BREAK
         |   lvalue
+        |   BREAK
         |   assign
         |   select
         |   iter
