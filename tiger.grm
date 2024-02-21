@@ -34,8 +34,8 @@ E_Pos to_E_Pos(YYLTYPE pos);
 %nonassoc DO OF
 %nonassoc THEN 
 %nonassoc ELSE
+%nonassoc ASSIGN
 %left SEMICOLON
-%left ASSIGN
 %left OR
 %left AND
 %nonassoc EQ NEQ GT LT GE LE
