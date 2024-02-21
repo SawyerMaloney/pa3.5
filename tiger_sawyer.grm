@@ -63,7 +63,7 @@ exp:        INT
 lvalue:     ID lvalue_extension
 
 lvalue_extension:   /* empty */
-                |   DOT ID lvalue_extension
+              |   DOT ID lvalue_extension
                 |   LBRACK exp RBRACK lvalue_extension
 
 assign:         lvalue ASSIGN exp
