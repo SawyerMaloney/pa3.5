@@ -1,0 +1,177 @@
+/*
+ Author: John (Jack) Edwards - edwarddn@cslab.bc.edu
+*/
+
+%{
+#include <stdio.h>
+#include "util.h"
+#include "errormsg.h"
+
+int yylex();
+void yyerror(char * s);
+
+%}
+
+%union {
+    int ival;
+    string sval;
+}
+
+%token <sval> ID STRING
+%token <ival> INT
+
+%token 
+    COMMA COLON SEMICOLON LPAREN RPAREN LBRACK RBRACK 
+    LBRACE RBRACE DOT 
+    PLUS MINUS TIMES DIVIDE EQ NEQ LT LE GT GE
+    AND OR ASSIGN
+    ARRAY IF THEN ELSE WHILE FOR TO DO LET IN END OF 
+    BREAK NIL
+    FUNCTION VAR TYPE 
+
+%start program
+
+%nonassoc DO  
+%nonassoc OF
+%nonassoc THEN
+%nonassoc ELSE
+%nonassoc TYPE 
+%nonassoc FUNCTION
+%left SEMICOLON
+%nonassoc ASSIGN
+%left OR
+%left AND
+%nonassoc EQ NEQ LT LE GT GE
+%left PLUS MINUS
+%left TIMES DIVIDE
+%left UMINUS
+
+%%
+
+program:    exp
+
+exp :   INT
+    |   STRING
+    |   BREAK
+    |   NIL
+    |   lvalue
+    |   compare_exp
+    |   boolean_exp
+    |   assign_exp
+    |   arithmetic_exp
+    |   iterate
+    |   if_else
+    |   function_call
+    |   ID LBRACE record_fields RBRACE
+    |   ID LBRACK exp RBRACK OF exp
+    |   LPAREN exp_seq RPAREN
+    |   LPAREN RPAREN 
+    |   LET dec_seq IN END
+    |   LET dec_seq IN exp_seq END
+    |   MINUS exp %prec UMINUS
+
+lvalue : ID lvalue_prime /* pg 521, 524 for records */
+
+lvalue_prime :              /* empty = could be nothing */ 
+    |   DOT ID lvalue_prime /* get fields of record */
+    |   LBRACK exp RBRACK lvalue_prime /* array notation */
+
+compare_exp : exp EQ exp 
+    |   exp NEQ exp
+    |   exp GE exp
+    |   exp LE exp
+    |   exp LT exp
+    |   exp GT exp
+
+assign_exp : lvalue ASSIGN exp
+
+arithmetic_exp : exp PLUS exp
+    |   exp MINUS exp
+    |   exp TIMES exp
+    |   exp DIVIDE exp
+
+boolean_exp : exp AND exp
+    |   exp OR exp
+
+
+iterate : WHILE exp DO exp
+    |   FOR ID ASSIGN exp TO exp DO exp
+
+if_else : IF exp THEN exp ELSE exp
+    |   IF exp THEN exp
+
+
+function_call : ID LPAREN RPAREN
+    |   ID LPAREN exp_list RPAREN
+
+
+
+    /* exp_list :  exp
+        |   exp_list COMMA exp  */
+
+exp_list : exp exp_list_prime
+
+exp_list_prime : COMMA exp exp_list_prime
+    |   /* empty */
+
+
+
+    /* for let statements, also idomatic statement comma expression (Eseq) pg 525 */
+    / * exp_seq : exp      
+          |   exp_seq SEMICOLON exp * /
+
+exp_seq : exp exp_seq_prime
+
+exp_seq_prime : SEMICOLON exp exp_seq_prime
+    |   /* empty * /
+
+
+
+    /* body of let expression characterstic of functional programming */
+dec_seq :                         /* nothing */  
+    |   declaration dec_seq
+
+declaration : type_dec
+    |   variable_dec
+    |   function_dec
+
+type_dec : TYPE ID EQ type
+
+type :  ID
+    |   LBRACE type_fields RBRACE
+    |   ARRAY OF ID
+
+
+type_fields :       /* could be empty */
+    |   type_fields_list
+
+type_fields_list : type_field_assign
+    |   type_fields_list COMMA type_field_assign
+
+type_field_assign : ID COLON ID
+
+
+variable_dec : VAR ID ASSIGN exp    /* implict: var type is return type of exp */
+    |   VAR ID COLON ID ASSIGN exp 
+
+
+function_dec : FUNCTION ID LPAREN type_fields RPAREN EQ exp   /* returns nothing */
+    |   FUNCTION ID LPAREN type_fields RPAREN COLON ID EQ exp 
+
+
+
+record_fields :    /* could be empty. see pg 534 */
+    |   record_fields_list
+
+record_fields_list : record_field_assign
+    |   record_fields_list COMMA record_field_assign
+
+record_field_assign : ID EQ exp 
+
+
+%%
+
+void yyerror(char *s) {
+    EM_error(EM_token_pos, "%s", s);
+}
+
