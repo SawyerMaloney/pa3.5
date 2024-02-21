@@ -31,23 +31,115 @@ E_Pos to_E_Pos(YYLTYPE pos);
     BREAK NIL
     FUNCTION VAR TYPE 
 
+%nonassoc DO OF
+%nonassoc THEN 
+%nonassoc ELSE
+%left SEMICOLON
+%left ASSIGN
+%left OR
+%left AND
+%nonassoc EQ NEQ GT LT GE LE
+%left PLUS MINUS
+%left TIMES DIVIDE
+%left UMINUS
+
+
 %start program
 
 %%
 
-program: exp
+program:    exp
+exp:        INT
+        |   STRING
+        |   NIL
+        |   lvalue
+        |   assign
+        |   select
+        |   iter
+        |   funccall
+        |   arith
+        |   comparison
+        |   boolean_exp
+        |   MINUS exp %prec UMINUS
+        |   ID LBRACE field_assignments RBRACE
+        |   ID LBRACK exp RBRACK OF exp
+        |   LPAREN RPAREN
+        |   LPAREN exp_sequence RPAREN
+        |   LET dec_seq IN END
+        |   LET dec_seq IN exp_sequence END
 
-exp: var_exp
-    ;
+lvalue:     ID lvalue_extension
 
-var_exp: var
-    ;
+lvalue_extension:   /* empty */
+              |   DOT ID lvalue_extension
+                |   LBRACK exp RBRACK lvalue_extension
 
-var: simple_var
-    ;
+assign:         lvalue ASSIGN exp
 
-simple_var: ID { printf("%s %d\n", $1, @1.first_column); }
-    ;
+funccall:       ID LPAREN RPAREN
+        |       ID LPAREN exp_list RPAREN
+
+arith:          exp PLUS exp
+        |       exp MINUS exp
+        |       exp TIMES exp
+        |       exp DIVIDE exp
+
+
+boolean_exp:    exp AND exp
+        |       exp OR exp
+
+field_assignments:      /* empty */
+        |               field_assignment_list
+
+field_assignment_list:  field_assignment
+        |               field_assignment_list COMMA field_assignment
+
+field_assignment:       ID EQ exp
+
+select:         IF exp THEN exp ELSE exp
+        |       IF exp THEN exp
+
+iter:       WHILE exp DO exp
+        |   FOR ID ASSIGN exp TO exp DO exp
+
+exp_sequence:   exp
+        |       exp_sequence SEMICOLON exp
+
+exp_list:   exp
+        |   exp_list COMMA exp
+
+comparison:     exp EQ exp
+        |       exp NEQ exp
+        |       exp GT exp
+        |       exp LT exp 
+        |       exp GE exp 
+        |       exp LE exp 
+        |       exp LT GT exp
+
+dec_seq:                /* empty */
+        |               dec dec_seq
+
+dec:                    type_dec
+        |               variable_dec
+        |               function_dec
+
+type_dec:       TYPE ID EQ type
+
+type:       ID
+        |   LBRACE type_fields RBRACE
+        |   ARRAY OF ID
+
+type_fields:    /* empty */
+        |       type_field_list
+
+type_field_list:    ID COLON ID
+        |           type_field_list COMMA ID COLON ID
+
+variable_dec:       VAR ID ASSIGN exp
+        |           VAR ID COLON ID ASSIGN exp
+
+function_dec:   FUNCTION ID LPAREN type_fields RPAREN EQ exp
+        |       FUNCTION ID LPAREN type_fields RPAREN COLON ID EQ exp
 %%
 
 void yyerror(char *s) {
