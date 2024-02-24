@@ -1,4 +1,4 @@
-CC = gcc
+C = gcc
 FLAGS = -Wall -Werror -std=c99 -D_XOPEN_SOURCE=700 -g
 COMMON_HEADERS =  errormsg.h util.h
 
@@ -31,4 +31,3 @@ util.o: util.c util.h
 
 clean: 
 	rm -f parsetest *.o lex.yy.c y.tab.* y.output
-

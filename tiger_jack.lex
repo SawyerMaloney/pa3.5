@@ -1,9 +1,22 @@
 %{
+#include <stdio.h>
 #include <string.h>
 
+#include "absyn.h"
 #include "errormsg.h"
-#include "y.tab.h"
 #include "util.h"
+#include "y.tab.h"
+
+#define YY_USER_ACTION {yylloc.first_line = yylineno; \
+   yylloc.first_column = colnum; \
+   colnum = colnum + yyleng; \
+   yylloc.last_column = colnum; \
+   yylloc.last_line = yylineno; \
+}
+
+int colnum = 1;
+
+E_Pos to_E_Pos(YYLTYPE pos);#include <string.h>
 
 #define INITIAL_BUFFER_SIZE 16
 

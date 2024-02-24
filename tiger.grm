@@ -1,10 +1,10 @@
+%{
 /*
 Authors: 
 Sawyer Maloney - malonesm@bc.edu
 John (Jack) Edwards - edwarddn@bc.edu
 */
 
-%{
 #include <stdio.h>
 #include "absyn.h"
 #include "errormsg.h"
@@ -54,100 +54,101 @@ E_Pos to_E_Pos(YYLTYPE pos);
 
 %%
 
-program:    exp
+program: exp
 
-exp:        INT
-        |   STRING
-        |   NIL
-        |   BREAK
-        |   lvalue
-        |   BREAK
-        |   assign
-        |   select
-        |   iter
-        |   func_call
-        |   arith
-        |   comparison
-        |   boolean_exp
-        |   MINUS exp %prec UMINUS
-        |   ID LBRACE records RBRACE
-        |   ID LBRACK exp RBRACK OF exp
-        |   LPAREN RPAREN
-        |   LPAREN exp_sequence RPAREN
-        |   LET dec_seq IN END
-        |   LET dec_seq IN exp_sequence END
+exp: INT
+    | STRING
+    | NIL
+    | BREAK
+    | lvalue
+    | BREAK
+    | assign
+    | select
+    | iter
+    | func_call
+    | arith
+    | comparison
+    | boolean_exp
+    | MINUS exp %prec UMINUS
+    | ID LBRACE records RBRACE
+    | ID LBRACK exp RBRACK OF exp
+    | LPAREN RPAREN
+    | LPAREN exp_sequence RPAREN
+    | LET dec_seq IN END
+    | LET dec_seq IN exp_sequence END
 
-lvalue:     ID lvalue_extension
+lvalue: ID lvalue_extension
 
-lvalue_extension:   /* empty */
-                |   DOT ID lvalue_extension /* access record members */
-                |   LBRACK exp RBRACK lvalue_extension  /* get array value at index */
+lvalue_extension: DOT ID lvalue_extension /* access record members */
+    | LBRACK exp RBRACK lvalue_extension  /* get array value at index */
+    | /* empty */
 
-assign:         lvalue ASSIGN exp
+assign: lvalue ASSIGN exp
 
-func_call:      ID LPAREN RPAREN
-         |      ID LPAREN exp_list RPAREN
+func_call: ID LPAREN RPAREN
+    | ID LPAREN exp_list RPAREN
 
-arith:          exp PLUS exp
-        |       exp MINUS exp
-        |       exp TIMES exp
-        |       exp DIVIDE exp
+arith: exp PLUS exp
+    | exp MINUS exp
+    | exp TIMES exp
+    | exp DIVIDE exp
 
-boolean_exp:    exp AND exp
-        |       exp OR exp
+boolean_exp: exp AND exp
+    | exp OR exp
 
-records:        /* empty */
-        |       record_list
+records: record_list
+    | /* empty */ 
 
-record_list:    record
-        |       record_list COMMA record
+record_list: record
+    | record_list COMMA record
 
-record:         ID EQ exp
+record: ID EQ exp
 
-select:         IF exp THEN exp ELSE exp
-        |       IF exp THEN exp
+select: IF exp THEN exp ELSE exp
+    | IF exp THEN exp
 
-iter:           WHILE exp DO exp
-        |       FOR ID ASSIGN exp TO exp DO exp
+iter: WHILE exp DO exp
+    | FOR ID ASSIGN exp TO exp DO exp
 
-exp_sequence:   exp
-        |       exp_sequence SEMICOLON exp
+exp_sequence: exp
+    | exp_sequence SEMICOLON exp
 
-exp_list:       exp
-        |       exp_list COMMA exp
+exp_list: exp
+    | exp_list COMMA exp
 
-comparison:     exp EQ exp
-        |       exp NEQ exp
-        |       exp GT exp
-        |       exp LT exp 
-        |       exp GE exp 
-        |       exp LE exp 
-        |       exp LT GT exp
+comparison: exp EQ exp
+    | exp NEQ exp
+    | exp GT exp
+    | exp LT exp 
+    | exp GE exp 
+    | exp LE exp 
+    | exp LT GT exp
 
-dec_seq:        /* empty */
-        |       dec dec_seq
+dec_seq: dec dec_seq
+    | /* empty */ 
 
-dec:            type_dec
-        |       variable_dec
-        |       function_dec
+dec: type_dec
+    | variable_dec
+    | function_dec
 
-type_dec:       TYPE ID EQ type
+type_dec: TYPE ID EQ type
 
-type:           ID
-        |       LBRACE type_fields RBRACE
-        |       ARRAY OF ID
+type: ID
+    | LBRACE type_fields RBRACE
+    | ARRAY OF ID
 
-type_fields:    /* empty */
-        |       type_field_list
+type_fields: type_field_list
+    | /* empty */
 
-type_field_list:    ID COLON ID
-        |           type_field_list COMMA ID COLON ID
+type_field_list: ID COLON ID
+    | type_field_list COMMA ID COLON ID
 
-variable_dec:       VAR ID ASSIGN exp
-        |           VAR ID COLON ID ASSIGN exp
+variable_dec: VAR ID ASSIGN exp
+    | VAR ID COLON ID ASSIGN exp
 
-function_dec:   FUNCTION ID LPAREN type_fields RPAREN EQ exp
-        |       FUNCTION ID LPAREN type_fields RPAREN COLON ID EQ exp
+function_dec: FUNCTION ID LPAREN type_fields RPAREN EQ exp
+    | FUNCTION ID LPAREN type_fields RPAREN COLON ID EQ exp
+
 %%
 
 void yyerror(char *s) {
