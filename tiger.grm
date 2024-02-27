@@ -18,7 +18,7 @@ E_Pos to_E_Pos(YYLTYPE pos);
 
 %}
 
-// %define api.location.type {E_Pos};
+%define api.location.type {E_Pos};
 
 %union {
     int ival;
@@ -54,12 +54,22 @@ E_Pos to_E_Pos(YYLTYPE pos);
 
 %%
 
+var_exp: var
+    ;
+
+var: simple_var
+    ;
+
+simple_var: ID { printf("%s %d\n", $1, @1.first_column); }
+    ;
+
 program: exp
 
 exp: INT
     | STRING
     | NIL
     | BREAK
+    | var_exp
     | lvalue
     | BREAK
     | assign

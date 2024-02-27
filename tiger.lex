@@ -21,6 +21,8 @@ E_Pos to_E_Pos(YYLTYPE pos);
 
 %option nounput noinput
 
+%x COMMENT
+
 space [ \t\r]
 ws {space}+
 digit [0-9]
@@ -51,13 +53,17 @@ function    { return FUNCTION; }
 type        { return TYPE; }
 array       { return ARRAY; }
 if          { return IF; }
-"/*"        { BEGIN(comment); continue; }
-<comment>"*/"      { BEGIN(INITIAL); continue; }
-<comment>\n        { continue; }
-<comment>.         { continue; }
-:=          { return ASSIGN; }
-:           { return COLON; }
-;           { return SEMICOLON; }
+
+"/*"        { BEGIN(COMMENT); continue; }
+<COMMENT> {
+    "*/"      { BEGIN(INITIAL); continue; }
+    "\n"      { ++yylineno; colnum = 1; continue; }
+    .         { continue; }
+}
+
+":="        { return ASSIGN; }
+":"         { return COLON; }
+";"         { return SEMICOLON; }
 "("         { return LPAREN; }
 ")"         { return RPAREN; }
 "["         { return LBRACK; }
@@ -79,11 +85,11 @@ if          { return IF; }
 "|"         { return OR; }
 
 [a-zA-Z_][a-zA-Z0-9_]*      { yylval.sval=make_String(yytext); return ID; }
-\"([^"])*\"       { yylval.sval = copy_unescaped(yytext); return STRING; }
+\"[^"]*\"   { yylval.sval = copy_unescaped(yytext); return STRING; }
 {digit}+	{ yylval.ival = atoi(yytext); return INT; }
 .	        { EM_error(to_E_Pos(yylloc), "illegal token: %s", yytext); }
 
-char *copy_unescaped(char *str) {
+char * copy_unescaped(char * str) {
     char *p = (char *) malloc(strlen(str) - 1); // we need size for null term. but not for quotations
     int sl = strlen(str);
     int _ = 0; // placing in p
