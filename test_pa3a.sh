@@ -34,5 +34,5 @@ else
     printf "\n See parse failures listed above.\n\n"
 fi
 
-make clean
+# make clean
 
