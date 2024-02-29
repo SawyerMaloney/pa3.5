@@ -71,7 +71,6 @@ exp: INT
     | BREAK
     | var_exp
     | lvalue
-    | BREAK
     | assign
     | select
     | iter
