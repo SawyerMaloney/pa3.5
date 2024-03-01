@@ -12,7 +12,7 @@ John (Jack) Edwards - edwarddn@bc.edu
 #include "util.h"
 #include "y.tab.h"
 
-int yylex();
+int yylex(); /* lexing function prototype */
 void yyerror(char * s);
 E_Pos to_E_Pos(YYLTYPE pos);
 
@@ -21,8 +21,23 @@ E_Pos to_E_Pos(YYLTYPE pos);
 %define api.location.type {E_Pos};
 
 %union {
+    /* int pos */
     int ival;
     string sval;
+    A_Exp exp;
+    A_Var var;
+    A_Dec dec;
+    A_Type type;
+    A_ExpList explist;
+    A_DecList declist;
+    A_Field field;
+    A_FieldList fieldlist;
+    A_FunDec fundec;
+    A_FunDecList = fundeclist;
+    A_TypeDec = typedec;
+    A_TypeDecList = typedeclist;
+    A_Efield = efield;
+    A_EfieldList = efieldlist;
 }
 
 %token <sval> ID STRING
@@ -36,6 +51,10 @@ E_Pos to_E_Pos(YYLTYPE pos);
     ARRAY IF THEN ELSE WHILE FOR TO DO LET IN END OF 
     BREAK NIL
     FUNCTION VAR TYPE 
+
+%type <var> lvalue
+/* more */
+
 
 %nonassoc DO OF
 %nonassoc THEN 
@@ -63,9 +82,9 @@ var: simple_var
 simple_var: ID { printf("%s %d\n", $1, @1.first_column); }
     ;
 
-program: exp
+program: exp { $$ = $1; ast = $$; if (!@1.first_column) printf(""); } /* from Aviram? don't think it's correct tho */
 
-exp: INT
+exp:  INT { $$ = make_A_IntExp(E_Pos, $1); } 
     | STRING
     | NIL
     | BREAK
@@ -92,13 +111,13 @@ lvalue_extension: DOT ID lvalue_extension /* access record members */
     | LBRACK exp RBRACK lvalue_extension  /* get array value at index */
     | /* empty */
 
-assign: lvalue ASSIGN exp
+assign: lvalue ASSIGN exp { $$ = make_A_AssignExp($1, $3); }
 
 func_call: ID LPAREN RPAREN
     | ID LPAREN exp_list RPAREN
 
-arith: exp PLUS exp
-    | exp MINUS exp
+arith: exp PLUS exp 
+    | exp MINUS exp 
     | exp TIMES exp
     | exp DIVIDE exp
 
