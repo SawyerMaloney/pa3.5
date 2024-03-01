@@ -84,26 +84,26 @@ simple_var: ID { printf("%s %d\n", $1, @1.first_column); }
 
 program: exp { $$ = $1; ast = $$; if (!@1.first_column) printf(""); } /* from Aviram? don't think it's correct tho */
 
-exp:  INT { $$ = make_A_IntExp(E_Pos, $1); } 
-    | STRING
-    | NIL
-    | BREAK
+exp:  INT       { $$ = make_A_IntExp(E_Pos, $1); } 
+    | STRING    { $$ = make_A_StringExp(E_Pos, $1; }
+    | NIL       { $$ = make_A_NilExp(E_Pos, $1; }
+    | BREAK     { $$ = make_A_BreakExP(E_Pos; }
     | var_exp
     | lvalue
     | assign
     | select
     | iter
     | func_call
-    | arith
+    | arith     { $$ = make_A_OpExp(E_Pos, $2, $1, $3; }
     | comparison
     | boolean_exp
     | MINUS exp %prec UMINUS
     | ID LBRACE records RBRACE
     | ID LBRACK exp RBRACK OF exp
-    | LPAREN RPAREN
-    | LPAREN exp_sequence RPAREN
-    | LET dec_seq IN END
-    | LET dec_seq IN exp_sequence END
+    | LPAREN RPAREN                     { }
+    | LPAREN exp_sequence RPAREN        { $$ = make_A_SeqExp(E_Pos, $2; }
+    | LET dec_seq IN END                { $$ = make_A_LetExp(E_Pos, $2; } /* how do you make the body empty? */
+    | LET dec_seq IN exp_sequence END   { $$ = make_A_LetExP(E_Pos, $2, $4 }; /* and is this the correct indexing? */
 
 lvalue: ID lvalue_extension
 
@@ -113,10 +113,10 @@ lvalue_extension: DOT ID lvalue_extension /* access record members */
 
 assign: lvalue ASSIGN exp { $$ = make_A_AssignExp($1, $3); }
 
-func_call: ID LPAREN RPAREN
-    | ID LPAREN exp_list RPAREN
+func_call: ID LPAREN RPAREN { $$ = make_A_CallExp(E_Pos, $1; } /* how do we do empty? */
+    | ID LPAREN exp_list RPAREN     { $$ = make_A_CallExP(E_Pos, $1, $3; }
 
-arith: exp PLUS exp 
+arith: exp PLUS exp
     | exp MINUS exp 
     | exp TIMES exp
     | exp DIVIDE exp
