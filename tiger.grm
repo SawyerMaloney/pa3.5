@@ -53,21 +53,24 @@ E_Pos to_E_Pos(YYLTYPE pos);
     FUNCTION VAR TYPE 
 
 // defining types from the union ---- getting rid of types for a second here
-// %type <exp> program exp var_exp lvalue assign select iter func_call arith comparison boolean_exp 
-// %type <dec> dec
-// %type <type> type
-// %type <explist> exp_list
-// %type <declist> dec_seq
-// %type <field> record /* is this the right one? */
-// %type <fieldlist> record_list
-// %type <fundec> function_dec
-// %type <fundeclist> --> don't have one? 
-// %type <typedec> type_dec
-// %type <typedeclist> type_fields /* or type_field_list ? */
-// %type <efield> not sure about this one 
+// does program need to be defined as absyn_root?
+%type <ival> INT
+%type <sval> STRING
+%type <exp> program exp var_exp assign select iter func_call arith comparison boolean_exp 
+%type <var> lvalue
+%type <dec> dec
+%type <declist> dec_seq
+%type <fundec> function_dec
+%type <fundeclist> funtion_dec_list
+%type <typedec> type_dec
+%type <typedeclist> type_dec_list
+%type <type> type 
+%type <explist> exp_list
+%type <field> field
+%type <fieldlist> type_field_list type_fields
 
 
-
+%nonassoc LOW
 %nonassoc DO OF
 %nonassoc THEN 
 %nonassoc ELSE
@@ -84,23 +87,12 @@ E_Pos to_E_Pos(YYLTYPE pos);
 %start program
 
 %%
-
-var_exp: var
-    ;
-
-var: simple_var
-    ;
-
-simple_var: ID { printf("%s %d\n", $1, @1.first_column); }
-    ;
-
-program: exp { $$ = $1; ast = $$; if (!@1.first_column) printf(""); } /* from Aviram? don't think it's correct tho */
+program: exp { $$ = $1; ast = $$; if (!@1.first_column) printf(""); } // ??
 
 exp:  INT      
     | STRING    
     | NIL
     | BREAK     
-    | var_exp
     | lvalue
     | assign
     | select
@@ -167,11 +159,17 @@ comparison: exp EQ exp
 dec_seq: dec dec_seq
     | /* empty */ 
 
-dec: type_dec
+dec: type_dec_list
     | variable_dec
-    | function_dec
+    | function_dec_list
+
+function_dec_list:  function_dec %prec LOW
+                |   function_dec function_dec_list
 
 type_dec: TYPE ID EQ type
+
+type_dec_list:  type_dec
+        |       type_dec type_dec_list
 
 type: ID
     | LBRACE type_fields RBRACE
@@ -180,8 +178,10 @@ type: ID
 type_fields: type_field_list
     | /* empty */
 
-type_field_list: ID COLON ID
-    | type_field_list COMMA ID COLON ID
+type_field_list:    type_field 
+    |               type_field_list COMMA type_field
+
+type_field: ID COLON ID
 
 variable_dec: VAR ID ASSIGN exp
     | VAR ID COLON ID ASSIGN exp
