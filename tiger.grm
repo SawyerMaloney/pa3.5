@@ -68,6 +68,8 @@ E_Pos to_E_Pos(YYLTYPE pos);
 %type <explist> exp_list
 %type <field> field
 %type <fieldlist> type_field_list type_fields
+%type <efield> record
+%type <efieldlist> records record_list
 
 
 %nonassoc LOW
