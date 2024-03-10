@@ -52,21 +52,18 @@ E_Pos to_E_Pos(YYLTYPE pos);
     BREAK NIL
     FUNCTION VAR TYPE 
 
-// defining types from the union ---- getting rid of types for a second here
 // does program need to be defined as absyn_root?
-%type <ival> INT
-%type <sval> STRING
-%type <exp> program exp var_exp assign select iter func_call arith comparison boolean_exp 
+%type <exp> program exp assign select iter func_call arith comparison boolean_exp 
 %type <var> lvalue
 %type <dec> dec
 %type <declist> dec_seq
 %type <fundec> function_dec
-%type <fundeclist> funtion_dec_list
+%type <fundeclist> function_dec_list
 %type <typedec> type_dec
 %type <typedeclist> type_dec_list
 %type <type> type 
 %type <explist> exp_list
-%type <field> field
+%type <field> type_field
 %type <fieldlist> type_field_list type_fields
 %type <efield> record
 %type <efieldlist> records record_list
@@ -104,7 +101,7 @@ exp:  INT
     | comparison
     | boolean_exp
     | MINUS exp %prec UMINUS
-    | ID LBRACE records RBRACE
+    | ID LBRACE records RBRACE 
     | ID LBRACK exp RBRACK OF exp
     | LPAREN RPAREN              
     | LPAREN exp_sequence RPAREN        
@@ -150,46 +147,46 @@ exp_sequence: exp
 exp_list: exp
     | exp_list COMMA exp
 
-comparison: exp EQ exp
-    | exp NEQ exp
-    | exp GT exp
-    | exp LT exp 
-    | exp GE exp 
-    | exp LE exp 
-    | exp LT GT exp
+comparison:   exp EQ exp    { $$ = make_A_OpExp(E_Pos, $2, $1, $3); }
+            | exp NEQ exp   { $$ = make_A_OpExp(E_Pos, $2, $1, $3); }
+            | exp GT exp    { $$ = make_A_OpExp(E_Pos, $2, $1, $3); }
+            | exp LT exp    { $$ = make_A_OpExp(E_Pos, $2, $1, $3); }
+            | exp GE exp    { $$ = make_A_OpExp(E_Pos, $2, $1, $3); }
+            | exp LE exp    { $$ = make_A_OpExp(E_Pos, $2, $1, $3); }
+            | exp LT GT exp { $$ = make_A_OpExp(E_Pos, $2, $1, $3); }
 
-dec_seq: dec dec_seq
+dec_seq: dec dec_seq        { $$ = make_A_DecList($1, $2); }
     | /* empty */ 
 
-dec: type_dec_list
+dec: type_dec_list        // see type_fields for question: do these all return correctly from above and thus don't need to be reiterated here?
     | variable_dec
     | function_dec_list
 
-function_dec_list:  function_dec %prec LOW
-                |   function_dec function_dec_list
+function_dec_list:  function_dec %prec LOW          { $$ = make_A_FunDecList($1, NULL); } // low prec, don't want this one chosen
+                |   function_dec function_dec_list  { $$ = make_A_FunDecList($1, $2); }
 
-type_dec: TYPE ID EQ type
+type_dec: TYPE ID EQ type               { $$ = make_A_TypeDec($2, $4); }
 
-type_dec_list:  type_dec
-        |       type_dec type_dec_list
+type_dec_list:  type_dec                { $$ = make_A_TypeDecList($1, NULL); }
+        |       type_dec type_dec_list  { $$ = make_A_TypeDecList($1, $2); }
 
-type: ID
-    | LBRACE type_fields RBRACE
-    | ARRAY OF ID
+type: ID                                { $$ = make_A_NameType(E_Pos, $1); }
+    | LBRACE type_fields RBRACE         { $$ = make_A_RecordType(E_Pos, $2); }
+    | ARRAY OF ID                       { $$ = make_A_ArrayType(E_Pos, $3); }
 
-type_fields: type_field_list
+type_fields: type_field_list            { $$ = make_A_FieldList(NULL, $1); } // is this (and the rest of type_fields) correct? Or does it just return into type_fields correctly from type_field_list?
     | /* empty */
 
-type_field_list:    type_field 
-    |               type_field_list COMMA type_field
+type_field_list:    type_field                          { $$ = make_A_FieldList($1, NULL); }
+    |               type_field_list COMMA type_field    { $$ = make_A_FieldList($3, $1); }
 
-type_field: ID COLON ID
+type_field: ID COLON ID     { $$ = make_A_Field(E_Pos, $2, $1); }
 
-variable_dec: VAR ID ASSIGN exp
-    | VAR ID COLON ID ASSIGN exp
+variable_dec: VAR ID ASSIGN exp     { $$ = make_A_VarDec(E_Pos, $2, NULL, $4); } // null for type?
+    | VAR ID COLON ID ASSIGN exp    { $$ = make_A_VarDec(E_Pos, $4, $2, $6); }
 
-function_dec: FUNCTION ID LPAREN type_fields RPAREN EQ exp
-    | FUNCTION ID LPAREN type_fields RPAREN COLON ID EQ exp
+function_dec: FUNCTION ID LPAREN type_fields RPAREN EQ exp  { $$ = make_A_FunDec(E_Pos, $2, $4, NULL, $7); }
+    | FUNCTION ID LPAREN type_fields RPAREN COLON ID EQ exp { $$ = make_A_FunDec(E_Pos, $2, $4, $7, $9); } // is this correct?
 
 %%
 
