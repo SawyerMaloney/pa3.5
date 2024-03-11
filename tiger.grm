@@ -104,33 +104,33 @@ exp:  INT               { $$ = make_A_IntExp(to_E_Pos(@1), $1); }
     | arith             { $$ = $1; }
     | comparison        { $$ = $1; }
     | boolean_exp       { $$ = $1; }
-    | MINUS exp %prec UMINUS            { $$ = make_A_OpExp(to_E_Pos(@1), A_MINUS_OP, make_A_IntExp(E_Pos, 0), $2); }
+    | MINUS exp %prec UMINUS            { $$ = make_A_OpExp(to_E_Pos(@1), A_MINUS_OP, make_A_IntExp(to_E_Pos(@1), 0), $2); }
     | ID LBRACE records RBRACE          { $$ = $3; } 
     | ID LBRACK exp RBRACK OF exp       { $$ = make_A_ArrayExp(to_E_Pos(@1), S_Symbol($1), $3, $6); }
     | LPAREN RPAREN                     { $$ = make_A_SeqExp(to_E_Pos(@1), NULL); } 
     | LPAREN exp_sequence RPAREN        { $$ = make_A_SeqExp(to_E_Pos(@1), $2); }
     | LET dec_seq IN exp_sequence END   { $$ = make_A_LetExp(to_E_Pos(@1), $2, make_A_SeqExp((to_E_Pos(@4), $4))); }  
 
-lvalue: ID                      { $$ = make_A_SimpleVar(E_Pos, S_Symbol($1)); }
-    | ID LBRACK exp RBRACK      { $$ = make_A_SubscriptVar(E_Pos, A_SimpleVar(EM_tokPos, S_Symbol($1)), $3); }
-    | lvalue LBRACK exp RBRACK  { $$ = make_A_SubscriptVar(E_Pos, $1, $3); }
-    | lvalue DOT ID             { $$ = make_A_FieldVar(E_Pos, $1, S_Symbol($3)); }
+lvalue: ID                      { $$ = make_A_SimpleVar(to_E_Pos(@1), S_Symbol($1)); }
+    | ID LBRACK exp RBRACK      { $$ = make_A_SubscriptVar(to_E_Pos(@1), A_SimpleVar(EM_tokPos, S_Symbol($1)), $3); }
+    | lvalue LBRACK exp RBRACK  { $$ = make_A_SubscriptVar(to_E_Pos(@1), $1, $3); }
+    | lvalue DOT ID             { $$ = make_A_FieldVar(to_E_Pos(@1), $1, S_Symbol($3)); }
 
-assign: lvalue ASSIGN exp  { $$ = make_A_AssignExp(E_Pos, $1, $3); }
+assign: lvalue ASSIGN exp  { $$ = make_A_AssignExp(to_E_Pos(@1), $1, $3); }
 
-func_call: ID LPAREN exp_list RPAREN  { $$ = make_A_CallExp(E_Pos, S_Symbol($1), $3); }
+func_call: ID LPAREN exp_list RPAREN  { $$ = make_A_CallExp(to_E_Pos(@1), S_Symbol($1), $3); }
 
-arith: exp PLUS exp   { $$ = make_A_OpExp(E_Pos, A_PLUS_OP, $1, $3); }
-    | exp MINUS exp   { $$ = make_A_OpExp(E_Pos, A_MINUS_OP, $1, $3); }
-    | exp TIMES exp   { $$ = make_A_OpExp(E_Pos, A_TIMES_OP, $1, $3); }
-    | exp DIVIDE exp  { $$ = make_A_OpExp(E_Pos, A_DIVIDE_OP, $1, $3); }
+arith: exp PLUS exp   { $$ = make_A_OpExp(to_E_Pos(@1), A_PLUS_OP, $1, $3); }
+    | exp MINUS exp   { $$ = make_A_OpExp(to_E_Pos(@1), A_MINUS_OP, $1, $3); }
+    | exp TIMES exp   { $$ = make_A_OpExp(to_E_Pos(@1), A_TIMES_OP, $1, $3); }
+    | exp DIVIDE exp  { $$ = make_A_OpExp(to_E_Pos(@1), A_DIVIDE_OP, $1, $3); }
 
-select: IF exp THEN exp ELSE exp { $$ = make_A_IfExp(E_Pos, $2, $4, $6); }
-    | IF exp THEN exp            { $$ = make_A_IfExp(E_Pos, $2, $2, NULL); }
+select: IF exp THEN exp ELSE exp { $$ = make_A_IfExp(to_E_Pos(@1), $2, $4, $6); }
+    | IF exp THEN exp            { $$ = make_A_IfExp(to_E_Pos(@1), $2, $2, NULL); }
 
     /* See end of chapter 4 */
-boolean_exp: exp AND exp { $$ = make_A_IfExp(E_Pos, $1, $3, make_A_IntExp(E_Pos, 0)); }
-    | exp OR exp         { $$ = make_A_IfExp(E_Pos, $1, make_A_IntExp(E_Pos, 1), $3); }
+boolean_exp: exp AND exp { $$ = make_A_IfExp(to_E_Pos(@1), $1, $3, make_A_IntExp(to_E_Pos(@1), 0)); }
+    | exp OR exp         { $$ = make_A_IfExp(to_E_Pos(@1), $1, make_A_IntExp(to_E_Pos(@1), 1), $3); }
 
 
 records: record_list  { $$ = $1; }
@@ -151,15 +151,15 @@ exp_list_nonempty: exp     { $$ = make_A_ExpList($1, NULL); }
     | exp_list_nonempty COMMA exp { $$ = make_A_ExpList($3, $1); }
 
 
-iter: WHILE exp DO exp  { $$ = make_A_WhileExp(E_Pos, $2, $4); }
-    | FOR ID ASSIGN exp TO exp DO exp   { $$ = make_A_ForExp(E_Pos, S_Symbol($2), $4, $6, $8); }
+iter: WHILE exp DO exp  { $$ = make_A_WhileExp(to_E_Pos(@1), $2, $4); }
+    | FOR ID ASSIGN exp TO exp DO exp   { $$ = make_A_ForExp(to_E_Pos(@1), S_Symbol($2), $4, $6, $8); }
 
-comparison: exp EQ exp    { $$ = make_A_OpExp(E_Pos, A_EQ_OP, $1, $3); }
-    | exp NEQ exp   { $$ = make_A_OpExp(E_Pos, A_NEQ_OP, $1, $3); }
-    | exp GT exp    { $$ = make_A_OpExp(E_Pos, A_GT_OP, $1, $3); }
-    | exp LT exp    { $$ = make_A_OpExp(E_Pos, A_LT_OP, $1, $3); }
-    | exp GE exp    { $$ = make_A_OpExp(E_Pos, A_GE_OP, $1, $3); }
-    | exp LE exp    { $$ = make_A_OpExp(E_Pos, A_LE_OP, $1, $3); }
+comparison: exp EQ exp    { $$ = make_A_OpExp(to_E_Pos(@1), A_EQ_OP, $1, $3); }
+    | exp NEQ exp   { $$ = make_A_OpExp(to_E_Pos(@1), A_NEQ_OP, $1, $3); }
+    | exp GT exp    { $$ = make_A_OpExp(to_E_Pos(@1), A_GT_OP, $1, $3); }
+    | exp LT exp    { $$ = make_A_OpExp(to_E_Pos(@1), A_LT_OP, $1, $3); }
+    | exp GE exp    { $$ = make_A_OpExp(to_E_Pos(@1), A_GE_OP, $1, $3); }
+    | exp LE exp    { $$ = make_A_OpExp(to_E_Pos(@1), A_LE_OP, $1, $3); }
 
 
 /* This is where I start becoming less certain */
@@ -180,9 +180,9 @@ type_dec: TYPE ID EQ type               { $$ = make_A_TypeDec($2, $4); }
 type_dec_list:  type_dec                { $$ = make_A_TypeDecList($1, NULL); }
     |           type_dec type_dec_list  { $$ = make_A_TypeDecList($1, $2); }
 
-type: ID                                { $$ = make_A_NameType(E_Pos, S_Symbol($1)); }
-    | LBRACE type_fields RBRACE         { $$ = make_A_RecordType(E_Pos, $2); }
-    | ARRAY OF ID                       { $$ = make_A_ArrayType(E_Pos, S_Symbol($3)); }
+type: ID                                { $$ = make_A_NameType(to_E_Pos(@1), S_Symbol($1)); }
+    | LBRACE type_fields RBRACE         { $$ = make_A_RecordType(to_E_Pos(@1), $2); }
+    | ARRAY OF ID                       { $$ = make_A_ArrayType(to_E_Pos(@1), S_Symbol($3)); }
 
 type_fields: type_field_list            { $$ = make_A_FieldList(NULL, $1); }
  // is this (and the rest of type_fields) correct? Or does it just return into type_fields correctly from type_field_list?
@@ -191,13 +191,13 @@ type_fields: type_field_list            { $$ = make_A_FieldList(NULL, $1); }
 type_field_list:    type_field                          { $$ = make_A_FieldList($1, NULL); }
     |               type_field_list COMMA type_field    { $$ = make_A_FieldList($3, $1); }
 
-type_field: ID COLON ID     { $$ = make_A_Field(E_Pos, $3, $1); }
+type_field: ID COLON ID     { $$ = make_A_Field(to_E_Pos(@1), $3, $1); }
 
-variable_dec: VAR ID ASSIGN exp     { $$ = make_A_VarDec(E_Pos, S_Symbol($2), NULL, $4); } // null for type?
-    | VAR ID COLON ID ASSIGN exp    { $$ = make_A_VarDec(E_Pos, S_Symbol($2), S_Symbol($4), $6); }
+variable_dec: VAR ID ASSIGN exp     { $$ = make_A_VarDec(to_E_Pos(@1), S_Symbol($2), NULL, $4); } // null for type?
+    | VAR ID COLON ID ASSIGN exp    { $$ = make_A_VarDec(to_E_Pos(@1), S_Symbol($2), S_Symbol($4), $6); }
 
-function_dec: FUNCTION ID LPAREN type_fields RPAREN EQ exp  { $$ = make_A_FunDec(E_Pos, $2, $4, NULL, $7); }
-    | FUNCTION ID LPAREN type_fields RPAREN COLON ID EQ exp { $$ = make_A_FunDec(E_Pos, $2, $4, $7, $9); } // is this correct?
+function_dec: FUNCTION ID LPAREN type_fields RPAREN EQ exp  { $$ = make_A_FunDec(to_E_Pos(@1), $2, $4, NULL, $7); }
+    | FUNCTION ID LPAREN type_fields RPAREN COLON ID EQ exp { $$ = make_A_FunDec(to_E_Pos(@1), $2, $4, $7, $9); } // is this correct?
 
 %%
 
