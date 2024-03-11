@@ -36,8 +36,8 @@ E_Pos to_E_Pos(YYLTYPE pos);
     A_FunDecList fundeclist;
     A_TypeDec typedec;
     A_TypeDecList typedeclist;
-    A_Efield efield;
-    A_EfieldList efieldlist;
+    A_EField efield;
+    A_EFieldList efieldlist;
 }
 
 %token <sval> ID STRING
@@ -54,7 +54,7 @@ E_Pos to_E_Pos(YYLTYPE pos);
 
 %type <exp> program exp assign select iter func_call arith comparison boolean_exp 
 %type <var> lvalue //array also?
-%type <dec> dec
+%type <dec> dec variable_dec // added variable_dec
 %type <declist> dec_seq
 %type <fundec> function_dec
 %type <fundeclist> function_dec_list
@@ -68,6 +68,8 @@ E_Pos to_E_Pos(YYLTYPE pos);
 %type <efieldlist> records record_list
 /* expression sequence? */
 /* we need to go through these */
+// sawyer adding here
+%type <explist> exp_sequence
 
 %nonassoc LOW
 %nonassoc DO OF
@@ -92,9 +94,9 @@ program: exp { absyn_root = $1; }
 
 exp:  INT               { $$ = make_A_IntExp(to_E_Pos(@1), $1); }     
     | STRING            { $$ = make_A_StringExp(to_E_Pos(@1), $1); }
-    | NIL               { $$ = make_A_NilExp(to_E_Pos(@1); }
+    | NIL               { $$ = make_A_NilExp(to_E_Pos(@1)); }
     | BREAK             { $$ = make_A_BreakExp(to_E_Pos(@1)); } 
-    | lvalue            { $$ = make_A_VarExp(to_E_Pos(@1), $1) }
+    | lvalue            { $$ = make_A_VarExp(to_E_Pos(@1), $1); }
     | assign            { $$ = $1; }
     | select            { $$ = $1; }
     | iter              { $$ = $1; }
@@ -146,7 +148,7 @@ exp_list:                  { $$ = NULL; }
     | exp_list_nonempty    { $$ = $1; }
 
 exp_list_nonempty: exp     { $$ = make_A_ExpList($1, NULL); }
-    | explist_nonempty COMMA exp { $$ = make_A_ExpList($3, $1); }
+    | exp_list_nonempty COMMA exp { $$ = make_A_ExpList($3, $1); }
 
 
 iter: WHILE exp DO exp  { $$ = make_A_WhileExp(E_Pos, $2, $4); }
@@ -189,7 +191,7 @@ type_fields: type_field_list            { $$ = make_A_FieldList(NULL, $1); }
 type_field_list:    type_field                          { $$ = make_A_FieldList($1, NULL); }
     |               type_field_list COMMA type_field    { $$ = make_A_FieldList($3, $1); }
 
-type_field: ID COLON ID     { $$ = make_A_Field(E_Pos, $2, $1); }
+type_field: ID COLON ID     { $$ = make_A_Field(E_Pos, $3, $1); }
 
 variable_dec: VAR ID ASSIGN exp     { $$ = make_A_VarDec(E_Pos, S_Symbol($2), NULL, $4); } // null for type?
     | VAR ID COLON ID ASSIGN exp    { $$ = make_A_VarDec(E_Pos, S_Symbol($2), S_Symbol($4), $6); }
