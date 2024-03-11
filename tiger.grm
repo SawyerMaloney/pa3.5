@@ -53,7 +53,7 @@ E_Pos to_E_Pos(YYLTYPE pos);
     FUNCTION VAR TYPE 
 
 %type <exp> program exp assign select iter func_call arith comparison boolean_exp 
-%type <var> lvalue
+%type <var> lvalue //array also?
 %type <dec> dec
 %type <declist> dec_seq
 %type <fundec> function_dec
@@ -61,7 +61,7 @@ E_Pos to_E_Pos(YYLTYPE pos);
 %type <typedec> type_dec
 %type <typedeclist> type_dec_list
 %type <type> type 
-%type <explist> exp_list
+%type <explist> exp_list exp_list_nonempty
 %type <field> type_field
 %type <fieldlist> type_field_list type_fields
 %type <efield> record
