@@ -109,8 +109,7 @@ exp:  INT               { $$ = make_A_IntExp(to_E_Pos(@1), $1); }
     | ID LBRACK exp RBRACK OF exp       { $$ = make_A_ArrayExp(to_E_Pos(@1), make_S_Symbol($1), $3, $6); } // added make_
     | LPAREN RPAREN                     { $$ = make_A_SeqExp(to_E_Pos(@1), NULL); } 
     | LPAREN exp_sequence RPAREN        { $$ = make_A_SeqExp(to_E_Pos(@1), $2); }
-    // | LET dec_seq IN exp_sequence END   { $$ = make_A_LetExp(to_E_Pos(@1), $2, $4)); }  causing issues
-    | LET dec_seq IN exp_sequence END   { $$ = NULL; }
+    | LET dec_seq IN exp_sequence END   { $$ = make_A_LetExp(to_E_Pos(@1), $2, make_A_SeqExp(to_E_Pos(@1), $4)); }  
 
 lvalue: ID                      { $$ = make_A_SimpleVar(to_E_Pos(@1), make_S_Symbol($1)); }
     | ID LBRACK exp RBRACK      { $$ = make_A_SubscriptVar(to_E_Pos(@1), make_A_SimpleVar(to_E_Pos(@1), make_S_Symbol($1)), $3); }
@@ -167,16 +166,16 @@ comparison: exp EQ exp    { $$ = make_A_OpExp(to_E_Pos(@1), A_EQ_OP, $1, $3); }
 dec_seq: dec_seq dec        { $$ = make_A_DecList($2, $1); }
     | /* empty */           { $$ = NULL; }
 
-dec: type_dec_list       { $$ = make_A_TypeDecGroup(to_E_Pos(@1), @1); }
+dec: type_dec_list       { $$ = make_A_TypeDecGroup(to_E_Pos(@1), $1); }
     | variable_dec       { $$ = $1; }
-    | function_dec_list  { $$ = make_A_FunctionDecGroup(to_E_Pos(@1), @1); }
+    | function_dec_list  { $$ = make_A_FunctionDecGroup(to_E_Pos(@1), $1); }
 /* call make_group functions from here */
 
 
 function_dec_list:  function_dec %prec LOW   { $$ = make_A_FunDecList($1, NULL); } // low prec, don't want this one chosen
     |   function_dec function_dec_list       { $$ = make_A_FunDecList($1, $2); }
 
-type_dec: TYPE ID EQ type               { $$ = make_A_TypeDec($2, $4); }
+type_dec: TYPE ID EQ type               { $$ = make_A_TypeDec(make_S_Symbol($2), $4); }
 
 type_dec_list:  type_dec                { $$ = make_A_TypeDecList($1, NULL); }
     |           type_dec type_dec_list  { $$ = make_A_TypeDecList($1, $2); }
@@ -192,13 +191,13 @@ type_fields: type_field_list            { $$ = make_A_FieldList(NULL, $1); }
 type_field_list:    type_field                          { $$ = make_A_FieldList($1, NULL); }
     |               type_field_list COMMA type_field    { $$ = make_A_FieldList($3, $1); }
 
-type_field: ID COLON ID     { $$ = make_A_Field(to_E_Pos(@1), $3, $1); }
+type_field: ID COLON ID     { $$ = make_A_Field(to_E_Pos(@1), make_S_Symbol($3), make_S_Symbol($1)); }
 
 variable_dec: VAR ID ASSIGN exp     { $$ = make_A_VarDec(to_E_Pos(@1), make_S_Symbol($2), NULL, $4); } // null for type?
     | VAR ID COLON ID ASSIGN exp    { $$ = make_A_VarDec(to_E_Pos(@1), make_S_Symbol($2), make_S_Symbol($4), $6); }
 
-function_dec: FUNCTION ID LPAREN type_fields RPAREN EQ exp  { $$ = make_A_FunDec(to_E_Pos(@1), $2, $4, NULL, $7); }
-    | FUNCTION ID LPAREN type_fields RPAREN COLON ID EQ exp { $$ = make_A_FunDec(to_E_Pos(@1), $2, $4, $7, $9); } // is this correct?
+function_dec: FUNCTION ID LPAREN type_fields RPAREN EQ exp  { $$ = make_A_FunDec(to_E_Pos(@1), make_S_Symbol($2), $4, NULL, $7); }
+    | FUNCTION ID LPAREN type_fields RPAREN COLON ID EQ exp { $$ = make_A_FunDec(to_E_Pos(@1), make_S_Symbol($2), $4, make_S_Symbol($7), $9); } // is this correct?
 
 %%
 
