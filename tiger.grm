@@ -69,7 +69,7 @@ E_Pos to_E_Pos(YYLTYPE pos);
 /* expression sequence? */
 /* we need to go through these */
 // sawyer adding here
-%type <explist> exp_sequence
+%type <explist> exp_sequence // but then why does the let exp take only an exp?
 
 %nonassoc LOW
 %nonassoc DO OF
@@ -105,20 +105,21 @@ exp:  INT               { $$ = make_A_IntExp(to_E_Pos(@1), $1); }
     | comparison        { $$ = $1; }
     | boolean_exp       { $$ = $1; }
     | MINUS exp %prec UMINUS            { $$ = make_A_OpExp(to_E_Pos(@1), A_MINUS_OP, make_A_IntExp(to_E_Pos(@1), 0), $2); }
-    | ID LBRACE records RBRACE          { $$ = $3; } 
-    | ID LBRACK exp RBRACK OF exp       { $$ = make_A_ArrayExp(to_E_Pos(@1), S_Symbol($1), $3, $6); }
+    | ID LBRACE records RBRACE          { $$ = $3; } // do we have to call something else on this?
+    | ID LBRACK exp RBRACK OF exp       { $$ = make_A_ArrayExp(to_E_Pos(@1), make_S_Symbol($1), $3, $6); } // added make_
     | LPAREN RPAREN                     { $$ = make_A_SeqExp(to_E_Pos(@1), NULL); } 
     | LPAREN exp_sequence RPAREN        { $$ = make_A_SeqExp(to_E_Pos(@1), $2); }
-    | LET dec_seq IN exp_sequence END   { $$ = make_A_LetExp(to_E_Pos(@1), $2, make_A_SeqExp((to_E_Pos(@4), $4))); }  
+    // | LET dec_seq IN exp_sequence END   { $$ = make_A_LetExp(to_E_Pos(@1), $2, $4)); }  causing issues
+    | LET dec_seq IN exp_sequence END   { $$ = NULL; }
 
-lvalue: ID                      { $$ = make_A_SimpleVar(to_E_Pos(@1), S_Symbol($1)); }
-    | ID LBRACK exp RBRACK      { $$ = make_A_SubscriptVar(to_E_Pos(@1), A_SimpleVar(EM_tokPos, S_Symbol($1)), $3); }
+lvalue: ID                      { $$ = make_A_SimpleVar(to_E_Pos(@1), make_S_Symbol($1)); }
+    | ID LBRACK exp RBRACK      { $$ = make_A_SubscriptVar(to_E_Pos(@1), make_A_SimpleVar(to_E_Pos(@1), make_S_Symbol($1)), $3); }
     | lvalue LBRACK exp RBRACK  { $$ = make_A_SubscriptVar(to_E_Pos(@1), $1, $3); }
-    | lvalue DOT ID             { $$ = make_A_FieldVar(to_E_Pos(@1), $1, S_Symbol($3)); }
+    | lvalue DOT ID             { $$ = make_A_FieldVar(to_E_Pos(@1), $1, make_S_Symbol($3)); }
 
 assign: lvalue ASSIGN exp  { $$ = make_A_AssignExp(to_E_Pos(@1), $1, $3); }
 
-func_call: ID LPAREN exp_list RPAREN  { $$ = make_A_CallExp(to_E_Pos(@1), S_Symbol($1), $3); }
+func_call: ID LPAREN exp_list RPAREN  { $$ = make_A_CallExp(to_E_Pos(@1), make_S_Symbol($1), $3); }
 
 arith: exp PLUS exp   { $$ = make_A_OpExp(to_E_Pos(@1), A_PLUS_OP, $1, $3); }
     | exp MINUS exp   { $$ = make_A_OpExp(to_E_Pos(@1), A_MINUS_OP, $1, $3); }
@@ -139,7 +140,7 @@ records: record_list  { $$ = $1; }
 record_list: record   { $$ = make_A_EFieldList($1, NULL); }
     | record_list COMMA record { $$ = make_A_EFieldList($3, $1); } 
 
-record: ID EQ exp     { $$ = make_A_EField(S_Symbol($1), $3); }
+record: ID EQ exp     { $$ = make_A_EField(make_S_Symbol($1), $3); }
 
 exp_sequence: exp     { $$ = make_A_ExpList($1, NULL); }
     | exp_sequence SEMICOLON exp { $$ = make_A_ExpList($3, $1); }
@@ -152,7 +153,7 @@ exp_list_nonempty: exp     { $$ = make_A_ExpList($1, NULL); }
 
 
 iter: WHILE exp DO exp  { $$ = make_A_WhileExp(to_E_Pos(@1), $2, $4); }
-    | FOR ID ASSIGN exp TO exp DO exp   { $$ = make_A_ForExp(to_E_Pos(@1), S_Symbol($2), $4, $6, $8); }
+    | FOR ID ASSIGN exp TO exp DO exp   { $$ = make_A_ForExp(to_E_Pos(@1), make_S_Symbol($2), $4, $6, $8); }
 
 comparison: exp EQ exp    { $$ = make_A_OpExp(to_E_Pos(@1), A_EQ_OP, $1, $3); }
     | exp NEQ exp   { $$ = make_A_OpExp(to_E_Pos(@1), A_NEQ_OP, $1, $3); }
@@ -166,9 +167,9 @@ comparison: exp EQ exp    { $$ = make_A_OpExp(to_E_Pos(@1), A_EQ_OP, $1, $3); }
 dec_seq: dec_seq dec        { $$ = make_A_DecList($2, $1); }
     | /* empty */           { $$ = NULL; }
 
-dec: type_dec_list       { $$ = $1; }
+dec: type_dec_list       { $$ = make_A_TypeDecGroup(to_E_Pos(@1), @1); }
     | variable_dec       { $$ = $1; }
-    | function_dec_list  { $$ = $1; }
+    | function_dec_list  { $$ = make_A_FunctionDecGroup(to_E_Pos(@1), @1); }
 /* call make_group functions from here */
 
 
@@ -180,9 +181,9 @@ type_dec: TYPE ID EQ type               { $$ = make_A_TypeDec($2, $4); }
 type_dec_list:  type_dec                { $$ = make_A_TypeDecList($1, NULL); }
     |           type_dec type_dec_list  { $$ = make_A_TypeDecList($1, $2); }
 
-type: ID                                { $$ = make_A_NameType(to_E_Pos(@1), S_Symbol($1)); }
+type: ID                                { $$ = make_A_NameType(to_E_Pos(@1), make_S_Symbol($1)); }
     | LBRACE type_fields RBRACE         { $$ = make_A_RecordType(to_E_Pos(@1), $2); }
-    | ARRAY OF ID                       { $$ = make_A_ArrayType(to_E_Pos(@1), S_Symbol($3)); }
+    | ARRAY OF ID                       { $$ = make_A_ArrayType(to_E_Pos(@1), make_S_Symbol($3)); }
 
 type_fields: type_field_list            { $$ = make_A_FieldList(NULL, $1); }
  // is this (and the rest of type_fields) correct? Or does it just return into type_fields correctly from type_field_list?
@@ -193,8 +194,8 @@ type_field_list:    type_field                          { $$ = make_A_FieldList(
 
 type_field: ID COLON ID     { $$ = make_A_Field(to_E_Pos(@1), $3, $1); }
 
-variable_dec: VAR ID ASSIGN exp     { $$ = make_A_VarDec(to_E_Pos(@1), S_Symbol($2), NULL, $4); } // null for type?
-    | VAR ID COLON ID ASSIGN exp    { $$ = make_A_VarDec(to_E_Pos(@1), S_Symbol($2), S_Symbol($4), $6); }
+variable_dec: VAR ID ASSIGN exp     { $$ = make_A_VarDec(to_E_Pos(@1), make_S_Symbol($2), NULL, $4); } // null for type?
+    | VAR ID COLON ID ASSIGN exp    { $$ = make_A_VarDec(to_E_Pos(@1), make_S_Symbol($2), make_S_Symbol($4), $6); }
 
 function_dec: FUNCTION ID LPAREN type_fields RPAREN EQ exp  { $$ = make_A_FunDec(to_E_Pos(@1), $2, $4, NULL, $7); }
     | FUNCTION ID LPAREN type_fields RPAREN COLON ID EQ exp { $$ = make_A_FunDec(to_E_Pos(@1), $2, $4, $7, $9); } // is this correct?
